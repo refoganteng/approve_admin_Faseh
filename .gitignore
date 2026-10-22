@@ -1,7 +1,8 @@
-# Data & Excel files
+# Data & Excel files (abaikan semua file Excel kecuali template data_edited.xlsx)
 *.xlsx
 *.xls
 *.csv
+!data_edited.xlsx
 
 # HTML mockups & snapshots
 *.html
