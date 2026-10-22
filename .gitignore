@@ -1,0 +1,26 @@
+# Data & Excel files
+*.xlsx
+*.xls
+*.csv
+
+# HTML mockups & snapshots
+*.html
+
+# Authentication & Session credentials
+auth.json
+
+# Log files
+*.log
+log_*.txt
+
+# Python & Environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# OS specific files
+.DS_Store
+Thumbs.db
