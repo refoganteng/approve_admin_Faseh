@@ -425,6 +425,117 @@ def stop_anti_sleep(anti_sleep_handle):
 
 # ─────────────────────────── EXCEL HELPERS ───────────────────────────
 
+def format_file_size(num_bytes: int) -> str:
+    """Format ukuran file menjadi string yang mudah dibaca (KB / MB)."""
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if num_bytes < 1024.0:
+            return f"{num_bytes:.1f} {unit}"
+        num_bytes /= 1024.0
+    return f"{num_bytes:.1f} TB"
+
+
+def scan_excel_files(base_dir: Path = Path(".")) -> list[Path]:
+    """Mencari semua file Excel (.xlsx / .xls) di folder kerja dan subfolder tingkat 1."""
+    files = []
+    # 1. Cari di root folder
+    for ext in ("*.xlsx", "*.xls"):
+        for p in base_dir.glob(ext):
+            if not p.name.startswith("~$") and not p.name.startswith("."):
+                files.append(p)
+    # 2. Cari di subfolder tingkat 1 (misal input_fasih_ntb/)
+    for sub in base_dir.iterdir():
+        if sub.is_dir() and not sub.name.startswith(".") and sub.name != "__pycache__":
+            for ext in ("*.xlsx", "*.xls"):
+                for p in sub.glob(ext):
+                    if not p.name.startswith("~$") and not p.name.startswith("."):
+                        files.append(p)
+
+    # Urutkan: file di root terlebih dahulu, lalu alfabet
+    return sorted(list(set(files)), key=lambda x: (len(x.parts), str(x).lower()))
+
+
+def select_excel_interactive(cli_excel: str = None) -> Path:
+    """
+    Menampilkan menu pilihan file Excel interaktif di awal terminal jika ada banyak file Excel
+    atau jika user ingin memilih file Excel tertentu secara fleksibel dengan nama yang berbeda-beda.
+    """
+    if cli_excel:
+        p = Path(cli_excel)
+        if p.exists():
+            return p
+        print(f"\033[93m⚠️ File Excel '{cli_excel}' yang ditentukan via argumen tidak ditemukan.\033[0m")
+        print("Silakan pilih file dari daftar di bawah ini:\n")
+
+    files = scan_excel_files()
+
+    print("\n" + "═" * 65)
+    print("📂 PILIH FILE EXCEL DATA ASSIGNMENT:")
+    print("═" * 65)
+
+    if not files:
+        print("\033[93m⚠️ Tidak ditemukan file Excel (.xlsx / .xls) otomatis di folder ini.\033[0m")
+        while True:
+            try:
+                custom = input("Ketik nama / path file Excel yang ingin dijalankan: ").strip().strip("'\"")
+            except (KeyboardInterrupt, EOFError):
+                print("\nDibatalkan.")
+                sys.exit(0)
+            if custom and Path(custom).exists():
+                return Path(custom)
+            print(f"\033[91m❌ File '{custom}' tidak ditemukan! Silakan periksa kembali.\033[0m")
+
+    for idx, f in enumerate(files, 1):
+        try:
+            sz_str = format_file_size(f.stat().st_size)
+        except Exception:
+            sz_str = ""
+        sz_display = f"({sz_str})" if sz_str else ""
+        print(f"  [{idx}] \033[96m{f}\033[0m {sz_display}")
+
+    custom_opt = len(files) + 1
+    print(f"  [{custom_opt}] ✍️  Ketik nama / path file lain secara manual...")
+    print("─" * 65)
+
+    while True:
+        prompt_txt = f"Pilih nomor file Excel [1-{custom_opt}] (Tekan ENTER untuk [1]): "
+        try:
+            choice = input(prompt_txt).strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nDibatalkan.")
+            sys.exit(0)
+
+        if choice == "":
+            selected = files[0]
+            print(f"👉 Menggunakan file: \033[92m{selected}\033[0m\n")
+            return selected
+
+        if choice.isdigit():
+            c_int = int(choice)
+            if 1 <= c_int <= len(files):
+                selected = files[c_int - 1]
+                print(f"👉 File terpilih: \033[92m{selected}\033[0m\n")
+                return selected
+            elif c_int == custom_opt:
+                while True:
+                    try:
+                        manual = input("Ketik nama / path file Excel: ").strip().strip("'\"")
+                    except (KeyboardInterrupt, EOFError):
+                        print("\nDibatalkan.")
+                        sys.exit(0)
+                    if manual and Path(manual).exists():
+                        print(f"👉 File terpilih: \033[92m{manual}\033[0m\n")
+                        return Path(manual)
+                    print(f"\033[91m❌ File '{manual}' tidak ditemukan. Silakan periksa kembali.\033[0m")
+
+        # Jika user langsung mengetik nama file (misal data_september.xlsx)
+        direct_path = Path(choice.strip("'\""))
+        if direct_path.exists() and (choice.endswith(".xlsx") or choice.endswith(".xls")):
+            print(f"👉 File terpilih: \033[92m{direct_path}\033[0m\n")
+            return direct_path
+
+        print(f"\033[91m❌ Pilihan '{choice}' tidak valid. Masukkan angka antara 1 sampai {custom_opt}.\033[0m")
+
+
 def find_default_excel() -> Path:
     """Mendeteksi file Excel default yang ada di workspace."""
     if Path(DEFAULT_EXCEL).exists():
@@ -861,29 +972,24 @@ async def main():
     parser.add_argument("--all-rows", action="store_true", help="Proses semua baris terlepas dari Status Otomasi")
     args = parser.parse_args()
 
-    # Tentukan path file Excel
-    if args.excel:
-        excel_path = Path(args.excel)
-    else:
-        excel_path = find_default_excel()
-
-    if not excel_path.exists():
-        log.error(f"File Excel '{excel_path}' tidak ditemukan!")
-        log.error(f"Silakan letakkan file data di '{DEFAULT_EXCEL}' atau gunakan parameter --excel <path>")
-        return
-
-    dry_run = args.dry_run
-
     print(r"""
 ╔══════════════════════════════════════════════════════════════════════╗
 ║               FASIH AUTOMATION - APPROVE ADMIN                       ║
 ║                                                                      ║
-║  1. Browser Chrome akan terbuka otomatis                             ║
-║  2. Silakan LOGIN MANUAL ke akun FASIH Anda di browser               ║
-║  3. Setelah login & dashboard terbuka, tekan ENTER di terminal ini   ║
+║  1. Pilih file Excel data assignment yang akan di-running            ║
+║  2. Browser Chrome akan terbuka otomatis                             ║
+║  3. Silakan LOGIN MANUAL ke akun FASIH Anda di browser (jika belum)  ║
 ║  4. Bot akan otomatis approve assignment satu per satu               ║
 ╚══════════════════════════════════════════════════════════════════════╝
     """)
+
+    # Tentukan path file Excel (menu interaktif di terminal)
+    excel_path = select_excel_interactive(cli_excel=args.excel)
+    if not excel_path or not excel_path.exists():
+        log.error(f"File Excel '{excel_path}' tidak valid atau tidak ditemukan!")
+        return
+
+    dry_run = args.dry_run
 
     wb, items = load_assignments(excel_path)
 

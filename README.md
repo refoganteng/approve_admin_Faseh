@@ -36,14 +36,28 @@ Script otomasi menggunakan **Playwright** untuk melakukan proses **Approve Admin
 
 ## 💻 Cara Menjalankan
 
-### 1. Menjalankan Default (menggunakan `data_edited.xlsx`)
+### 1. Menjalankan Script (Pilihan File Excel Interaktif)
+Jalankan script langsung:
 ```bash
 python auto_approve_admin.py
 ```
+Di awal terminal, script akan otomatis mendeteksi semua file Excel (`.xlsx` / `.xls`) di folder ini dan menampilkan menu pilihan interaktif:
+```text
+📂 PILIH FILE EXCEL DATA ASSIGNMENT:
+=================================================================
+  [1] data_edited.xlsx (7.3 KB)
+  [2] data_survei_batch2.xlsx (15.2 KB)
+  [3] ✍️  Ketik nama / path file lain secara manual...
+-----------------------------------------------------------------
+Pilih nomor file Excel [1-3] (Tekan ENTER untuk [1]): 
+```
+- Anda cukup menekan **ENTER** untuk memilih file nomor `[1]`, atau ketik nomor yang diinginkan.
+- Nama file bisa berbeda-beda tanpa batasan.
 
-### 2. Menjalankan dengan Data dari Folder `input_fasih_ntb`
+### 2. Menjalankan Langsung dengan File Tertentu (Tanpa Menu Interaktif)
+Jika ingin melewati menu pilihan dan langsung mengeksekusi file tertentu:
 ```bash
-python auto_approve_admin.py --excel input_fasih_ntb/data_edited.xlsx
+python auto_approve_admin.py --excel nama_file_anda.xlsx
 ```
 
 ### 3. Mode Simulasi / Uji Coba (`--dry-run`)
@@ -68,18 +82,4 @@ Default jeda adalah **0.7 detik**. Anda dapat mengubahnya jika ingin jeda lebih 
 ```bash
 python auto_approve_admin.py --delay 2.0
 ```
-
----
-
-## 📂 Struktur File Terkait
-
-- [auto_approve_admin.py](file:///Users/user/Documents/Python/approve_admin_faseh/auto_approve_admin.py) : Script otomasi utama Approve Admin.
-- [data_edited.xlsx](file:///Users/user/Documents/Python/approve_admin_faseh/data_edited.xlsx) : File Excel data assignment (default root).
-- [input_fasih_ntb/data_edited.xlsx](file:///Users/user/Documents/Python/approve_admin_faseh/input_fasih_ntb/data_edited.xlsx) : File Excel data assignment lengkap dari survei NTB.
-- [01_bukalink.html](file:///Users/user/Documents/Python/approve_admin_faseh/01_bukalink.html) : Referensi struktur halaman saat membuka assignment.
-- [02_btnapprove.html](file:///Users/user/Documents/Python/approve_admin_faseh/02_btnapprove.html) : Referensi elemen tombol Approve (`f:bg-success`, icon `tabler-icon-check`).
-- [03_modalkonfirmasi.html](file:///Users/user/Documents/Python/approve_admin_faseh/03_modalkonfirmasi.html) : Referensi modal dialog konfirmasi Approve.
-- [04_revoke.html](file:///Users/user/Documents/Python/approve_admin_faseh/04_revoke.html) : Referensi elemen tombol Revoke (rotasi putar). Jika tombol ini muncul dan tombol Approve tidak ada, berarti assignment sudah di-approve admin dan otomatis di-skip.
-- [log_approve.txt](file:///Users/user/Documents/Python/approve_admin_faseh/log_approve.txt) : Log detail eksekusi.
-- [log_simple_approve.txt](file:///Users/user/Documents/Python/approve_admin_faseh/log_simple_approve.txt) : Log ringkas per assignment untuk resume.
-- [log_terakhir_approve.txt](file:///Users/user/Documents/Python/approve_admin_faseh/log_terakhir_approve.txt) : Pemantau status progres secara real-time.
+   
